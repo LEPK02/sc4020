@@ -66,5 +66,5 @@ pipenv lock
 4. Regenerate `requirements.txt`:
 
 ```bash
-pipenv lock -r > requirements.txt
+pipenv requirements > requirements.txt
 ```
