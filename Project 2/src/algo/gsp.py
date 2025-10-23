@@ -17,7 +17,7 @@ class GSPAlgo(BaseAlgo):
     def prepare_data(self) -> pd.DataFrame:
         df: pd.DataFrame = self.data.get_data()
         patient_ids: pd.Series = (
-            df["id"] if "id" in df.columns else pd.Series(range(len(df)))
+            df["id"].astype(str) if "id" in df.columns else pd.Series([str(i) for i in range(len(df))])
         )
         features: pd.Index = df.columns.drop(["diagnosis", "id"], errors="ignore")
         discretizer: KBinsDiscretizer = KBinsDiscretizer(
@@ -63,5 +63,3 @@ class GSPAlgo(BaseAlgo):
                 entry[f"feature_{i}_value"] = value
             sequences.append(entry)
         return pd.DataFrame(sequences)
-
-    # TODO: make data analysis table and graphs

@@ -38,12 +38,28 @@ class AprioriAlgo(BaseAlgo):
         rules: pd.DataFrame = association_rules(
             frequent_itemsets, metric=metric, min_threshold=min_threshold
         )
-        rules["antecedents"] = rules["antecedents"].apply(
-            lambda x: ", ".join(sorted(x))
-        )
-        rules["consequents"] = rules["consequents"].apply(
-            lambda x: ", ".join(sorted(x))
-        )
-        return rules
 
-    # TODO: make data analysis table and graphs
+        rules["antecedents"] = rules["antecedents"].apply(lambda x: ", ".join(sorted(x)))
+        rules["consequents"] = rules["consequents"].apply(lambda x: ", ".join(sorted(x)))
+
+        numeric_cols = [
+            "antecedent support",
+            "consequent support",
+            "support",
+            "confidence",
+            "lift",
+            "representativity",
+            "leverage",
+            "conviction",
+            "zhangs_metric",
+            "jaccard",
+            "certainty",
+            "kulczynski",
+        ]
+        for col in numeric_cols:
+            if col in rules.columns:
+                rules[col] = pd.to_numeric(rules[col], errors="coerce")
+                rules[col] = rules[col].replace([float("inf"), float("-inf")], 0.0)
+                rules[col] = rules[col].fillna(0.0)
+
+        return rules

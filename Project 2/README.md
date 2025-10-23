@@ -10,6 +10,8 @@ Requirements: [Python 11](https://www.python.org/downloads/release/python-3110/)
 
 Supported OS: Windows
 
+Full list of dependencies can be found under `src/requirements.txt`
+
 1. **Clone the repository:**
 ```bash
 git clone "https://github.com/LEPK02/sc4020.git"
@@ -44,26 +46,20 @@ python __main__.py
 
 To modify or update dependencies:
 
-1. Activate the development environment from `/src`:
-
-```bash
-pipenv shell
-```
-
-2. Add or remove packages:
+1. Add or remove packages:
 
 ```bash
 pipenv install <package_name>       # Add a new dependency
 pipenv uninstall <package_name>     # Remove a dependency
 ```
 
-3. Update the `Pipfile.lock`:
+2. Update the `Pipfile.lock`:
 
 ```bash
 pipenv lock
 ```
 
-4. Regenerate `requirements.txt`:
+3. Regenerate `requirements.txt`:
 
 ```bash
 pipenv requirements > requirements.txt

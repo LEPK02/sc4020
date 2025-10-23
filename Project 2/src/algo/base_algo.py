@@ -3,8 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 from config import DATASET_NAME
-from data.base_data import Data
-
+from data import Data
 
 class BaseAlgo(ABC):
     def __init__(self, data: Data):
