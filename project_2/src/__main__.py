@@ -1,14 +1,6 @@
-import streamlit as st
-from client.page_modules import CancerPage, DiseasePage
-from config import TaskName
+import subprocess
+from pathlib import Path
 
-task_choice = st.sidebar.radio("", [t.value for t in TaskName])
-
-if "page_modules" not in st.session_state:
-    st.session_state.page_modules = {
-        TaskName.CANCER_FEATURES.value: CancerPage(),
-        TaskName.DISEASE_SYMPTOMS.value: DiseasePage(),
-    }
-
-page = st.session_state.page_modules[task_choice]
-page.render()
+if __name__ == "__main__":
+    app_path = Path(__file__).parent / "client" / "app.py"
+    subprocess.run(["streamlit", "run", str(app_path)])
