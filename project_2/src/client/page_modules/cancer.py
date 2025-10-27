@@ -1,6 +1,6 @@
 from algo import GSPAlgo
 from config import TaskName
-from components import Analysis, Filters
+from client.components import Analysis, Filters
 from data import cancer_data
 
 from .base import BasePage

@@ -1,6 +1,6 @@
 from algo import AprioriAlgo
 from config import TaskName
-from components import Filters
+from client.components import Filters
 from data import disease_symptoms_data
 
 from .base import BasePage
