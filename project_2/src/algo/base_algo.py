@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Any, Union
 
 import pandas as pd
 from config import DATASET_NAME
@@ -14,7 +15,7 @@ class BaseAlgo(ABC):
     def prepare_data(self) -> pd.DataFrame: ...
 
     @abstractmethod
-    def run(self) -> pd.DataFrame: ...
+    def run(self) -> Union[pd.DataFrame, dict[str, pd.DataFrame], Any]: ...
 
     def save_data(self) -> None:
         output_path = (
@@ -24,6 +25,16 @@ class BaseAlgo(ABC):
             / self.data.folder_name
         )
         output_path.mkdir(parents=True, exist_ok=True)
-        file_path = output_path / DATASET_NAME
         result = self.run()
-        result.to_csv(file_path, index=False)
+        
+        # Handle dictionary of DataFrames (for GSPAlgo)
+        if isinstance(result, dict):
+            for strategy, df in result.items():
+                file_path = output_path / f"dataset_{strategy}.csv"
+                df.to_csv(file_path, index=False)
+        # Handle single DataFrame (for other algorithms)
+        elif isinstance(result, pd.DataFrame):
+            file_path = output_path / DATASET_NAME
+            result.to_csv(file_path, index=False)
+        else:
+            raise TypeError(f"run() must return pd.DataFrame or dict[str, pd.DataFrame], got {type(result)}")
