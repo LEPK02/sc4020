@@ -7,6 +7,24 @@ from sklearn.preprocessing import KBinsDiscretizer
 
 from .base_algo import BaseAlgo
 
+"""
+INSTRUCTIONS TO USE:
+1.  Initialize the GSPAlgo object with the data
+
+    gsp = GSPAlgo(Data("cancer"))
+
+2.  Save the results to a CSV file in the data/output/cancer directory
+    parameter: top_k=K (number of top-K features to include in sequence, by default top_k=3)
+
+    gsp.save_data(top_k=K)
+
+3.  Optional to generate sequences for a specific discretization strategy (uniform/ quantile/ kmeans) and top-K features
+    Output: sequences_df is a DataFrame with the sequences for each patient.
+
+    sequences_df = gsp._generate_sequences_for_strategy(strategy, top_k=K)
+
+"""
+
 
 class Rank(Enum):
     LOW = "low"
@@ -72,8 +90,17 @@ class GSPAlgo(BaseAlgo):
                 z_scores[col] = z_score
         return z_scores
 
-    def _generate_sequences_for_strategy(self, strategy: str, max_len: int = 3) -> pd.DataFrame:
-        """Generate sequences for a specific discretization strategy"""
+    def _generate_sequences_for_strategy(self, strategy: str, top_k: int = 3) -> pd.DataFrame:
+        """
+        Generate sequences for a specific discretization strategy.
+        
+        Args:
+            strategy: Discretization strategy ('uniform', 'quantile', or 'kmeans')
+            top_k: Number of top-K features to include in sequence (K)
+        
+        Returns:
+            DataFrame with sequences for each patient
+        """
         # Prepare data with the specified strategy
         df: pd.DataFrame = self.data.get_data()
         patient_ids: pd.Series = (
@@ -123,8 +150,8 @@ class GSPAlgo(BaseAlgo):
                 reverse=True
             )
             
-            # Take top max_len features
-            seq: list[tuple[str, str]] = ranked_features[:max_len]
+            # Take top-K features
+            seq: list[tuple[str, str]] = ranked_features[:top_k]
             
             entry: dict = {
                 "patient_id": patient_ids.iloc[pos_idx],
@@ -135,7 +162,7 @@ class GSPAlgo(BaseAlgo):
                 entry[f"feature_{i}_value"] = value
             
             # Fill remaining features with empty if needed
-            while len(seq) < max_len:
+            while len(seq) < top_k:
                 i = len(seq) + 1
                 entry[f"feature_{i}_name"] = ""
                 entry[f"feature_{i}_value"] = ""
@@ -145,12 +172,12 @@ class GSPAlgo(BaseAlgo):
         
         return pd.DataFrame(sequences)
 
-    def run(self, max_len: int = 3) -> Dict[str, pd.DataFrame]:
+    def run(self, top_k: int = 3) -> Dict[str, pd.DataFrame]:
         """
         Generate sequences for all three discretization strategies using z-score ranking.
         
         Args:
-            max_len: Maximum sequence length (number of features)
+            top_k: Number of top-K features to include in sequence (K)
         
         Returns:
             Dictionary with keys "uniform", "quantile", "kmeans" containing DataFrames
@@ -159,6 +186,6 @@ class GSPAlgo(BaseAlgo):
         strategies = ["uniform", "quantile", "kmeans"]
         
         for strategy in strategies:
-            results[strategy] = self._generate_sequences_for_strategy(strategy, max_len)
+            results[strategy] = self._generate_sequences_for_strategy(strategy, top_k)
         
         return results
