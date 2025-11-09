@@ -30,7 +30,7 @@ pipenv install
 Run the program from `/src`:
 
 ```bash
-pipenv run python __main__.py
+pipenv run streamlit run __main__.py
 ```
 
 Or:
