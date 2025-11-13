@@ -145,7 +145,7 @@ class AprioriAlgo(BaseAlgo):
             matching_diseases: List[str] = []
             for _, row in df_clean.iterrows():
                 disease = row["Disease"]
-                symptoms = set(row[1:]) - {0}
+                symptoms = {str(s).strip() for s in row[1:] if isinstance(s, str) and s.strip()}
                 if symptom1 in symptoms and symptom2 in symptoms:
                     matching_diseases.append(disease)
             if matching_diseases:
