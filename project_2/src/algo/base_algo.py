@@ -3,8 +3,8 @@ from pathlib import Path
 from typing import Any, Union
 
 import pandas as pd
-from config import DATASET_NAME
-from data import Data
+from src.config import DATASET_NAME
+from src.data import Data
 
 class BaseAlgo(ABC):
     def __init__(self, data: Data):
