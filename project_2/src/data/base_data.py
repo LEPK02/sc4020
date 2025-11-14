@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from config import DATASET_NAME
+from src.config import DATASET_NAME
 
 class Data:
     def __init__(self, folder_name: str):
