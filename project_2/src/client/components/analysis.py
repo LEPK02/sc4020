@@ -1,126 +1,84 @@
-from typing import Callable, Optional
-
-import matplotlib.pyplot as plt
+from typing import List, Dict
 import pandas as pd
-import seaborn as sns
+import numpy as np
 import streamlit as st
 
-
-class AnalysisBuilder:
-    def __init__(self, df: pd.DataFrame):
-        self.df = df.copy()
-        self._title: Optional[str] = None
-        self._x: Optional[str] = None
-        self._y: Optional[str] = None
-        self._hue: Optional[str] = None
-        self._kind: str = "bar"
-        self._aggfunc: Optional[Callable] = None
-        self._top_n: Optional[int] = None
-
-    # --- Builder pattern methods ---
-    def title(self, title: str) -> "AnalysisBuilder":
-        self._title = title
-        return self
-
-    def x(self, column: str) -> "AnalysisBuilder":
-        self._x = column
-        return self
-
-    def y(self, column: str) -> "AnalysisBuilder":
-        self._y = column
-        return self
-
-    def hue(self, column: str) -> "AnalysisBuilder":
-        self._hue = column
-        return self
-
-    def kind(self, chart_type: str) -> "AnalysisBuilder":
-        self._kind = chart_type
-        return self
-
-    def aggregate(self, func: Callable) -> "AnalysisBuilder":
-        self._aggfunc = func
-        return self
-
-    def top(self, n: int) -> "AnalysisBuilder":
-        self._top_n = n
-        return self
-
-    # --- Render graph ---
-    def render(self):
-        if not self._x:
-            st.warning("Select an X-axis column to plot.")
-            return
-
-        df = self.df.copy()
-
-        # Optional aggregation
-        if self._aggfunc and self._y:
-            df = df.groupby(self._x)[self._y].agg(self._aggfunc).reset_index()
-
-        # Optional top N filtering
-        if self._top_n and self._x in df.columns:
-            df = (
-                df.nlargest(self._top_n, self._y)
-                if self._y in df.columns
-                else df.head(self._top_n)
-            )
-
-        # --- Plotting logic ---
-        plt.figure(figsize=(8, 5))
-        if self._kind == "bar":
-            sns.barplot(data=df, x=self._x, y=self._y, hue=self._hue)
-        elif self._kind == "line":
-            sns.lineplot(data=df, x=self._x, y=self._y, hue=self._hue, marker="o")
-        elif self._kind == "hist":
-            sns.histplot(data=df, x=self._x, hue=self._hue, bins=20, kde=True)
-        elif self._kind == "box":
-            sns.boxplot(data=df, x=self._x, y=self._y, hue=self._hue)
-        elif self._kind == "scatter":
-            sns.scatterplot(data=df, x=self._x, y=self._y, hue=self._hue)
-        else:
-            st.error(f"Unsupported chart type: {self._kind}")
-            return
-
-        plt.title(self._title or "Data Analysis")
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        st.pyplot(plt)
-        plt.close()
-
-
 class Analysis:
-    """Convenience wrapper for common dataset analyses."""
-
     def __init__(self, df: pd.DataFrame):
         self.df = df
+        self.strategies: List[str] = sorted(df["strategy"].unique().tolist())
+        self.top_n: int = 5
+        self.ranks: List[int] = list(range(1, self.top_n + 1))
 
-    def summary(self):
-        st.write("### Dataset Overview")
-        st.write(self.df.describe(include="all"))
+    def _table(self, data: Dict[str, List[str]]) -> pd.DataFrame:
+        df = pd.DataFrame({"Rank": self.ranks}).set_index("Rank")
+        for k, v in data.items():
+            df[k] = v
+        return df
 
-    def correlation(self):
-        st.write("### Correlation Heatmap")
-        numeric_df = self.df.select_dtypes(include=["number"])
-        if numeric_df.empty:
-            st.info("No numeric data to plot correlation heatmap.")
-            return
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(numeric_df.corr(), annot=True, cmap="coolwarm", fmt=".2f")
-        st.pyplot(plt)
-        plt.close()
+    def render_support(self) -> "Analysis":
+        table_m: Dict[str, List[str]] = {}
+        table_b: Dict[str, List[str]] = {}
 
-    def categorical_distribution(self, column: str):
-        st.write(f"### Distribution of {column}")
-        AnalysisBuilder(self.df).title(f"Distribution of {column}").x(column).kind(
-            "bar"
-        ).render()
+        for strat in self.strategies:
+            sdf = self.df[self.df["strategy"] == strat]
+            m_sorted = sdf.sort_values("support_percent_m", ascending=False)
+            b_sorted = sdf.sort_values("support_percent_b", ascending=False)
+            table_m[strat] = m_sorted["pattern"].head(self.top_n).tolist()
+            table_b[strat] = b_sorted["pattern"].head(self.top_n).tolist()
 
-    def feature_vs_target(self, feature: str, target: str):
-        st.write(f"### {feature} vs {target}")
-        AnalysisBuilder(self.df).title(f"{feature} vs {target}").x(feature).y(
-            target
-        ).kind("box").render()
+        st.subheader("Top Patterns by Support Percentage")
+        st.write("Malignant")
+        st.dataframe(self._table(table_m), width='stretch')
+        st.write("Benign")
+        st.dataframe(self._table(table_b), width='stretch')
+        return self
 
-    # TODO: make data analysis table and graphs
-    # Then call in respective file under page_modules > cancer.py / disease.py > CancerPage.render_analysis()
+    def render_contrast(self) -> "Analysis":
+        table_m: Dict[str, List[str]] = {}
+        table_b: Dict[str, List[str]] = {}
+
+        for strat in self.strategies:
+            sdf = self.df[self.df["strategy"] == strat]
+            m_sorted = sdf.sort_values(["Contrast_Rate", "support_percent_m"], ascending=[False, False])
+            b_sorted = sdf.sort_values(["Contrast_Rate", "support_percent_b"], ascending=[True, False])
+            table_m[strat] = m_sorted["pattern"].head(self.top_n).tolist()
+            table_b[strat] = b_sorted["pattern"].head(self.top_n).tolist()
+
+        st.subheader("Top Patterns by Contrast Rate")
+        st.write("Malignant-Leaning")
+        st.dataframe(self._table(table_m), width='stretch')
+        st.write("Benign-Leaning")
+        st.dataframe(self._table(table_b), width='stretch')
+        return self
+
+    def render_specific(self) -> "Analysis":
+        table_m: Dict[str, List[str]] = {}
+        table_b: Dict[str, List[str]] = {}
+
+        exclusive = self.df[self.df["Contrast_Rate"] == np.inf]
+
+        for strat in self.strategies:
+            sdf_m = exclusive[(exclusive["strategy"] == strat) & (exclusive["support_percent_m"] > 0)]
+            sdf_b = exclusive[(exclusive["strategy"] == strat) & (exclusive["support_percent_b"] > 0)]
+
+            m_sorted = sdf_m.sort_values(["pattern_length", "support_percent_m"], ascending=[False, False])
+            b_sorted = sdf_b.sort_values(["pattern_length", "support_percent_b"], ascending=[False, False])
+
+            m_list = m_sorted["pattern"].head(self.top_n).tolist()
+            b_list = b_sorted["pattern"].head(self.top_n).tolist()
+
+            if len(m_list) < self.top_n:
+                m_list += ["-"] * (self.top_n - len(m_list))
+            if len(b_list) < self.top_n:
+                b_list += ["-"] * (self.top_n - len(b_list))
+
+            table_m[strat] = m_list
+            table_b[strat] = b_list
+
+        st.subheader("Top Exclusive (Specific) Patterns")
+        st.write("Exclusive Malignant")
+        st.dataframe(self._table(table_m), width='stretch')
+        st.write("Exclusive Benign")
+        st.dataframe(self._table(table_b), width='stretch')
+        return self

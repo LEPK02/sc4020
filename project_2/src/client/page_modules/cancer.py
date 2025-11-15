@@ -1,10 +1,9 @@
+
 from algo import GSPAlgo
-from config import TaskName
 from client.components import Analysis, Filters
+from config import TaskName
 from data import cancer_data
-
 from .base import BasePage
-
 
 class CancerPage(BasePage):
     def __init__(self):
@@ -19,9 +18,4 @@ class CancerPage(BasePage):
         self.df = filters.render_filters()
 
     def render_analysis(self):
-        analysis = Analysis(self.df)
-        analysis.summary()
-        analysis.correlation()
-        if "diagnosis" in self.df.columns:
-            analysis.feature_vs_target("feature_1_value", "diagnosis")
-
+        Analysis(self.df).render_support().render_contrast().render_specific()

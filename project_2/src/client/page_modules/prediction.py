@@ -44,7 +44,7 @@ class PredictionPage:
             top_results_display.columns = ["Disease Name", "Probability of Disease"]
             st.dataframe(
                 top_results_display.style.format({"Probability of Disease": "{:.2%}"}),
-                use_container_width=True,
+                width='stretch',
                 hide_index=True,
             )
 
